@@ -11,26 +11,38 @@ import javax.servlet.http.HttpSession;
 public class LoginServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws ServletException, IOException {  
         HttpSession session = request.getSession();
         
-        String action = request.getParameter("action");
+        String logoutParam = request.getParameter("logout");
         
-        if(action != null && action.equals("reset")) {
+        if (logoutParam != null) {
             session.invalidate();
-            session = request.getSession();
+            request.setAttribute("result", "Successfully logged out.");
+            getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
+        } else if (session.getAttribute("username") != null) {
+            response.sendRedirect("home");
+        } else {
+            getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
         }
-        
-        getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-        
-    getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
+        HttpSession session = request.getSession();
 
-    getServletContext().getRequestDispatcher("/WEB-INF/home.jsp").forward(request, response);
+        if ( request.getParameter("username") != null && request.getParameter("password") != null ) {
+            AccountService accountService = new AccountService();
+            User user = accountService.login(request.getParameter("username"), request.getParameter("password"));
+            
+            if ( user != null ) {
+                session.setAttribute("username", user.getUsername());
+                response.sendRedirect("home");
+            } else {
+                request.setAttribute("result", "Invalid login");
+                getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
+            }
+        }     
     }
 }
